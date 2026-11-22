@@ -1,0 +1,15 @@
+{
+  "name": "navi-monorepo",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NAVI — Neural Autonomous Web Intelligence Monorepo",
+  "scripts": {
+    "dev:frontend": "npm run dev --prefix frontend",
+    "dev:backend": "powershell -Command \"backend\\.venv\\Scripts\\python.exe -m uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000\"",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:extension": "npm run build --prefix extension",
+    "build": "npm run build:frontend && npm run build:extension",
+    "check:backend": "powershell -Command \"backend\\.venv\\Scripts\\python.exe -m pytest backend\\tests -v\"",
+    "check:types": "npm run typecheck --prefix frontend && npm run typecheck --prefix extension && npm run typecheck --prefix shared"
+  }
+}
