@@ -1,3 +1,15 @@
+import sys
+from pathlib import Path
+from contextlib import asynccontextmanager
+
+# Ensure both repo root and backend parent directories are in sys.path
+_current_file = Path(__file__).resolve()
+_backend_dir = _current_file.parent.parent  # .../backend
+_repo_root = _backend_dir.parent            # .../NAVI
+for p in (str(_repo_root), str(_backend_dir)):
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
@@ -7,33 +19,43 @@ from backend.app.schemas.health import HealthResponse
 from backend.app.api.v1.router import api_router
 from backend.app.api.v1.endpoints.health import get_health
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    allowed_origins = settings.get_allowed_origins()
+    logger.info(
+        f"Starting {settings.PROJECT_NAME} v{settings.VERSION} "
+        f"[{settings.ENVIRONMENT}] on port {settings.PORT}"
+    )
+    logger.info(f"Configured CORS origins: {allowed_origins}")
+    yield
+    logger.info(f"Shutting down {settings.PROJECT_NAME}")
+
+
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     description="NAVI - Neural Autonomous Web Intelligence Core Backend Service",
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    lifespan=lifespan
 )
 
-# CORS Middleware for local web dashboard and extension integration
+# Production-ready CORS configuration
+# Explicit allowed origins, no wildcard '*' for credentialed requests
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173"
-    ],
+    allow_origins=settings.get_allowed_origins(),
     allow_origin_regex=r"^chrome-extension://.*",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Root health check endpoint
+# Root health check endpoint for Render / health checks
 @app.get("/health", response_model=HealthResponse, tags=["Health"])
 def root_health() -> HealthResponse:
-    """Root health check for load balancers and container probes."""
+    """Root health check for load balancers and deployment probes."""
     return get_health()
 
 # Include versioned API router

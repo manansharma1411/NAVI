@@ -1,13 +1,21 @@
 import React from 'react';
 import { Activity, Server, Clock, Layers } from 'lucide-react';
 import { Card } from '../ui/Card';
-import { BackendStatusResponse } from '../../services/api';
+import { BackendStatusResponse, isApiConfigured } from '../../services/api';
 
 interface SystemMetricsProps {
   status: BackendStatusResponse | null;
+  connectionError?: string | null;
 }
 
-export const SystemMetrics: React.FC<SystemMetricsProps> = ({ status }) => {
+export const SystemMetrics: React.FC<SystemMetricsProps> = ({ status, connectionError }) => {
+  const getBackendStateLabel = () => {
+    if (status) return status.status;
+    if (!isApiConfigured()) return 'Unconfigured';
+    if (connectionError) return 'Offline';
+    return 'Connecting...';
+  };
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       <Card className="flex items-center gap-3.5 bg-surface-100/80 border-slate-800">
@@ -19,7 +27,7 @@ export const SystemMetrics: React.FC<SystemMetricsProps> = ({ status }) => {
             Backend State
           </div>
           <div className="text-sm font-semibold text-white capitalize">
-            {status ? status.status : 'Connecting...'}
+            {getBackendStateLabel()}
           </div>
         </div>
       </Card>
