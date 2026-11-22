@@ -1,6 +1,8 @@
 import React from 'react';
-import { Activity, Server, Clock, Layers } from 'lucide-react';
+import { Server, Clock, Layers, ShieldCheck } from 'lucide-react';
 import { Card } from '../ui/Card';
+import { Tooltip } from '../ui/Tooltip';
+import { StatusIndicator } from '../ui/StatusIndicator';
 import { BackendStatusResponse, isApiConfigured } from '../../services/api';
 
 interface SystemMetricsProps {
@@ -9,70 +11,83 @@ interface SystemMetricsProps {
 }
 
 export const SystemMetrics: React.FC<SystemMetricsProps> = ({ status, connectionError }) => {
-  const getBackendStateLabel = () => {
-    if (status) return status.status;
-    if (!isApiConfigured()) return 'Unconfigured';
-    if (connectionError) return 'Offline';
-    return 'Connecting...';
-  };
-
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      <Card className="flex items-center gap-3.5 bg-surface-100/80 border-slate-800">
-        <div className="w-10 h-10 rounded-lg bg-brand-500/10 border border-brand-500/20 flex items-center justify-center">
-          <Server className="w-5 h-5 text-brand-400" />
-        </div>
-        <div>
-          <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider font-mono">
-            Backend State
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Backend State */}
+      <Tooltip content={status ? `Environment: ${status.environment}` : (connectionError || 'Backend not connected')}>
+        <Card className="flex items-center gap-3 p-3.5 bg-surface-100/60 border-slate-800/80 hover:border-slate-700/80 transition cursor-default">
+          <div className="w-8 h-8 rounded-lg bg-brand-500/10 border border-brand-500/20 flex items-center justify-center shrink-0">
+            <Server className="w-4 h-4 text-brand-400" />
           </div>
-          <div className="text-sm font-semibold text-white capitalize">
-            {getBackendStateLabel()}
+          <div className="min-w-0">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+              Backend Engine
+            </div>
+            <div className="flex items-center gap-2 mt-0.5">
+              <StatusIndicator
+                status={status ? 'online' : (!isApiConfigured() ? 'standby' : 'offline')}
+                size="sm"
+                pulse={!!status}
+              />
+              <span className="text-xs font-semibold text-white capitalize truncate">
+                {status ? status.status : (!isApiConfigured() ? 'Unconfigured' : 'Offline')}
+              </span>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </Tooltip>
 
-      <Card className="flex items-center gap-3.5 bg-surface-100/80 border-slate-800">
-        <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
-          <Clock className="w-5 h-5 text-emerald-400" />
-        </div>
-        <div>
-          <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider font-mono">
-            Uptime
+      {/* Uptime */}
+      <Tooltip content="Seconds elapsed since backend instance startup">
+        <Card className="flex items-center gap-3 p-3.5 bg-surface-100/60 border-slate-800/80 hover:border-slate-700/80 transition cursor-default">
+          <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0">
+            <Clock className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-sm font-semibold text-white font-mono">
-            {status ? `${status.uptime_seconds}s` : '0s'}
+          <div className="min-w-0">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+              Service Uptime
+            </div>
+            <div className="text-xs font-semibold text-white font-mono mt-0.5">
+              {status ? `${Math.round(status.uptime_seconds)}s` : '0s'}
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </Tooltip>
 
-      <Card className="flex items-center gap-3.5 bg-surface-100/80 border-slate-800">
-        <div className="w-10 h-10 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
-          <Layers className="w-5 h-5 text-violet-400" />
-        </div>
-        <div>
-          <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider font-mono">
-            Active Sessions
+      {/* Active Sessions */}
+      <Tooltip content="Active concurrent autonomous browser sessions">
+        <Card className="flex items-center gap-3 p-3.5 bg-surface-100/60 border-slate-800/80 hover:border-slate-700/80 transition cursor-default">
+          <div className="w-8 h-8 rounded-lg bg-violet-500/10 border border-violet-500/20 flex items-center justify-center shrink-0">
+            <Layers className="w-4 h-4 text-violet-400" />
           </div>
-          <div className="text-sm font-semibold text-white font-mono">
-            {status ? status.active_sessions : 0}
+          <div className="min-w-0">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+              Active Sessions
+            </div>
+            <div className="text-xs font-semibold text-white font-mono mt-0.5">
+              {status ? status.active_sessions : 0} <span className="text-[10px] text-slate-500 font-sans">running</span>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </Tooltip>
 
-      <Card className="flex items-center gap-3.5 bg-surface-100/80 border-slate-800">
-        <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-          <Activity className="w-5 h-5 text-blue-400" />
-        </div>
-        <div>
-          <div className="text-[11px] font-medium text-slate-400 uppercase tracking-wider font-mono">
-            Bridge Status
+      {/* Safety Boundary */}
+      <Tooltip content="Deterministic action guardrails prohibiting destructive checkout/auth actions">
+        <Card className="flex items-center gap-3 p-3.5 bg-surface-100/60 border-slate-800/80 hover:border-slate-700/80 transition cursor-default">
+          <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center shrink-0">
+            <ShieldCheck className="w-4 h-4 text-blue-400" />
           </div>
-          <div className="text-sm font-semibold text-white">
-            {status?.components.bridge ? 'Ready (WS)' : 'Standby'}
+          <div className="min-w-0">
+            <div className="text-[10px] font-mono uppercase tracking-wider text-slate-500">
+              Safety Guard
+            </div>
+            <div className="text-xs font-semibold text-emerald-400 mt-0.5 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+              <span>Enforced</span>
+            </div>
           </div>
-        </div>
-      </Card>
+        </Card>
+      </Tooltip>
     </div>
   );
 };

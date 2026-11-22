@@ -1,76 +1,121 @@
 import React from 'react';
-import { Compass, Radio, ExternalLink } from 'lucide-react';
-import { StatusBadge } from './StatusBadge';
+import { Compass, Radio, ExternalLink, Search } from 'lucide-react';
+import { StatusIndicator } from '../ui/StatusIndicator';
+import { Badge, Kbd } from '../ui/Badge';
+import { Tooltip } from '../ui/Tooltip';
 import { BackendStatusResponse, API_BASE_URL, isApiConfigured } from '../../services/api';
 
 interface HeaderProps {
   backendStatus: BackendStatusResponse | null;
   isLoading: boolean;
   connectionError: string | null;
+  onOpenCommandPalette: () => void;
 }
 
-export const Header: React.FC<HeaderProps> = ({ backendStatus, isLoading, connectionError }) => {
+export const Header: React.FC<HeaderProps> = ({
+  backendStatus,
+  isLoading,
+  connectionError,
+  onOpenCommandPalette
+}) => {
   const docsUrl = isApiConfigured()
     ? `${API_BASE_URL}/docs`
     : 'https://github.com/manansharma1411/NAVI#developer-quickstart';
 
-  const getStatusDisplay = () => {
+  const getStatusNode = () => {
     if (isLoading && !backendStatus) {
-      return <span className="text-slate-500 animate-pulse font-mono">Connecting...</span>;
+      return (
+        <span className="flex items-center gap-1.5 text-slate-400 font-mono text-[11px]">
+          <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-ping" />
+          Connecting...
+        </span>
+      );
     }
     if (backendStatus) {
       return (
-        <StatusBadge
-          status="healthy"
-          label={`${backendStatus.environment} (${backendStatus.uptime_seconds}s)`}
-        />
+        <Tooltip content={`Connected to ${API_BASE_URL || 'Localhost'}`}>
+          <div className="flex items-center gap-2">
+            <StatusIndicator status="online" size="sm" pulse />
+            <span className="text-[11px] font-mono text-emerald-400">
+              {backendStatus.environment} ({Math.round(backendStatus.uptime_seconds)}s)
+            </span>
+          </div>
+        </Tooltip>
       );
     }
     if (!isApiConfigured()) {
-      return <StatusBadge status="degraded" label="URL Unset" />;
+      return (
+        <Tooltip content="Set VITE_API_BASE_URL in your Vercel project settings">
+          <div className="flex items-center gap-2">
+            <StatusIndicator status="standby" size="sm" pulse={false} />
+            <span className="text-[11px] font-mono text-amber-400">URL Unset</span>
+          </div>
+        </Tooltip>
+      );
     }
-    return <StatusBadge status="offline" label="Unreachable" />;
+    return (
+      <Tooltip content={connectionError || 'Backend unreachable'}>
+        <div className="flex items-center gap-2">
+          <StatusIndicator status="offline" size="sm" pulse={false} />
+          <span className="text-[11px] font-mono text-slate-400">Offline</span>
+        </div>
+      </Tooltip>
+    );
   };
 
   return (
-    <header className="h-16 border-b border-surface-border bg-surface-100/60 backdrop-blur-md px-6 flex items-center justify-between sticky top-0 z-20">
+    <header className="h-14 border-b border-surface-border bg-surface-200/70 backdrop-blur-md px-5 flex items-center justify-between sticky top-0 z-20 select-none">
+      {/* Brand */}
       <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-lg bg-gradient-to-tr from-brand-700 via-brand-600 to-brand-accent p-0.5 flex items-center justify-center shadow-lg shadow-brand-600/20">
-          <div className="w-full h-full bg-background rounded-[7px] flex items-center justify-center">
-            <Compass className="w-5 h-5 text-brand-400 animate-spin-slow" />
+        <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-brand-700 via-brand-600 to-brand-accent p-0.5 flex items-center justify-center shadow-glow-brand">
+          <div className="w-full h-full bg-background rounded-[6px] flex items-center justify-center">
+            <Compass className="w-4 h-4 text-brand-400" />
           </div>
         </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="font-bold tracking-tight text-white font-mono text-base">NAVI</span>
-            <span className="text-xs bg-brand-500/10 text-brand-300 border border-brand-500/20 px-1.5 py-0.5 rounded font-mono">
-              v0.1.0
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-400 font-normal">
+        <div className="flex items-center gap-2">
+          <span className="font-bold tracking-tight text-white font-mono text-sm">NAVI</span>
+          <Badge variant="brand" size="sm">
+            v0.1.0
+          </Badge>
+          <span className="hidden md:inline text-[11px] text-slate-500 font-normal">
             Neural Autonomous Web Intelligence
-          </p>
+          </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-4">
-        <div
-          className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-200 border border-slate-800 text-xs"
-          title={connectionError || (backendStatus ? `Connected to ${API_BASE_URL}` : 'Backend is unreachable')}
+      {/* Center Search / Command Trigger */}
+      <div className="flex-1 max-w-xs mx-4 hidden sm:block">
+        <button
+          onClick={onOpenCommandPalette}
+          className="w-full flex items-center justify-between px-3 py-1.5 rounded-lg bg-surface-100 hover:bg-surface-50 border border-slate-700/60 text-slate-400 hover:text-slate-200 text-xs transition-colors shadow-subtle-border group"
         >
-          <Radio className="w-3.5 h-3.5 text-slate-400" />
-          <span className="text-slate-400">Backend:</span>
-          {getStatusDisplay()}
+          <div className="flex items-center gap-2">
+            <Search className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-300" />
+            <span>Search or command...</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Kbd>⌘K</Kbd>
+          </div>
+        </button>
+      </div>
+
+      {/* Right Controls */}
+      <div className="flex items-center gap-3">
+        {/* Backend Status indicator */}
+        <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-surface-100 border border-slate-800 text-xs">
+          <Radio className="w-3.5 h-3.5 text-slate-500" />
+          {getStatusNode()}
         </div>
 
+        {/* API Docs Link */}
         <a
           href={docsUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white px-2.5 py-1.5 rounded hover:bg-surface-50 transition"
-          title="Open FastAPI interactive documentation"
+          className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white px-2.5 py-1 rounded hover:bg-surface-50 transition"
+          title="Open interactive API documentation"
         >
-          <span>API Docs</span>
+          <span>API</span>
           <ExternalLink className="w-3 h-3 text-slate-500" />
         </a>
       </div>

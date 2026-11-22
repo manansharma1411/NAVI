@@ -4,30 +4,45 @@
 
 @layer base {
   :root {
-    --color-bg: #0B0F19;
-    --color-surface: #0E1320;
+    --color-bg: #090D16;
+    --color-surface: #0F1626;
+    --color-surface-elevated: #141C2E;
     --color-border: #1E293B;
+    --color-border-subtle: rgba(255, 255, 255, 0.06);
+    --color-brand: #6366F1;
+  }
+
+  * {
+    border-color: var(--color-border-subtle);
   }
 
   body {
     background-color: var(--color-bg);
-    color: #F8FAFC;
+    color: #F1F5F9;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
     overflow-x: hidden;
   }
 }
 
-/* Custom scrollbars */
+/* Custom refined scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
-  background: #0B0F19;
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1E293B;
-  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 9999px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Focus outline helper */
+.focus-ring {
+  @apply focus:outline-none focus:ring-2 focus:ring-brand-500/50 focus:ring-offset-1 focus:ring-offset-background;
 }
